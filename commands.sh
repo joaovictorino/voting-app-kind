@@ -4,7 +4,6 @@
 kind create cluster
 
 # Deploy application
-kubectl apply -f k8s/db
 kubectl apply -f k8s
 
 # Access application
