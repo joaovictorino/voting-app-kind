@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stfs-postgres
+  namespace: laboratorio
+spec:
+  selector:
+    matchLabels:
+      app: stfs-postgres
+  serviceName: "stfs-postgres"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: stfs-postgres
+    spec:
+      terminationGracePeriodSeconds: 20
+      containers:
+        - env:
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: config-postgres
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-postgres
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              valueFrom:
+                configMapKeyRef:
+                  name: config-postgres
+                  key: PGDATA
+          image: postgres:9.4
+          imagePullPolicy: Always
+          name: stfs-postgres
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          volumeMounts:
+            - mountPath: /data
+              name: db-claim
+  volumeClaimTemplates:
+    - metadata:
+        name: db-claim
+        namespace: laboratorio
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "hostpath"
+        resources:
+          requests:
+            storage: 5Gi
